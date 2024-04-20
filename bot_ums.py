@@ -2,6 +2,7 @@ import telebot as tb
 from telebot.handler_backends import State, StatesGroup
 import sqlite3
 from token_bot import token
+from bot_funcs import *
 
 bot = tb.TeleBot(token)
 
@@ -12,108 +13,68 @@ class MS(StatesGroup):
     check_num = State()
 
 
-with sqlite3.connect('project.db') as conn:
-    cur = conn.cursor()
-    cur.execute("CREATE TABLE IF NOT EXISTS test_name(id INTEGER NOT NULL, name TEXT NOT NULL, creator_id INTEGER NOT NULL, PRIMARY KEY(id))")
-    cur.execute("CREATE TABLE IF NOT EXISTS questions(id INTEGER NOT NULL, question TEXT NOT NULL, qnum INTEGER NOT NULL,FOREIGN KEY(id) REFERENCES test_name(id))")
-    cur.execute("CREATE TABLE IF NOT EXISTS results(test_id INTEGER NOT NULL, user_id INTEGER NOT NULL, result INTEGER NOT NULL)")
-    conn.commit()
-
-
 @bot.message_handler(state = MS.my_res)
 def my_res(message):
     user_id = message.from_user.id
-    with sqlite3.connect('project.db') as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM results WHERE user_id = (?)", (user_id, ))
-        s = cur.fetchall()
-        conn.commit()
+    s = private_res(user_id)
     for r in s:
         bot.send_message(message.chat.id, f"Номер теста: {r[0]}, результат: {r[2]} / 5")
     bot.delete_state(message.from_user.id, message.chat.id)
 
-@bot.message_handler(state = MS.test_res)
-def test_res(message):
-    l = []
-    cr_id = message.from_user.id
-    with sqlite3.connect('project.db') as conn:
+
+@bot.message_handler(state=MS.test_res)
+def res(message):
+    bot.send_message(message.chat.id, "Выберите тест:", reply_markup=buts(message.from_user.id))
+
+@bot.callback_query_handler(func=lambda call: True)
+def callback_query(call):
+    with connect('project.db') as conn:
         cur = conn.cursor()
-        cur.execute("SELECT id FROM test_name WHERE creator_id = (?)", (cr_id, ))
-        sp = cur.fetchall()
-        for i in sp:
-            for id in i:
-                cur.execute("SELECT * FROM results WHERE test_id = (?)", (id, ))
-                k = cur.fetchall()
-                l.append(k)
-        conn.commit()
-    for i in l:
-        bot.send_message(message.chat.id, f"Номер теста: {i[0]}, ID тестируемого: {i[1]}, результат: {i[2]}")
-    bot.delete_state(message.from_user.id, message.chat.id)
-
-
-
+        cur.execute("SELECT id FROM test_name WHERE creator_id = (?)", (call.from_user.id, ))
+        tests = cur.fetchall()
+        for i in tests:
+            if call.data == f"{i[0]}":
+                cur.execute("SELECT * FROM results WHERE test_id = (?)", (i[0], ))
+                res = cur.fetchall()
+    if len(res) == 0:
+        bot.send_message(call.message.chat.id, "Ваш тест никто не проходил!")
+    else:
+        for i in res:
+             bot.send_message(call.message.chat.id, f"ID тестируемого: {i[1]}, результат: {i[2]}")
 
 def q1(message, testid):
-    num = 1
-    with sqlite3.connect('project.db') as connection:
-        cur = connection.cursor()
-        cur.execute("INSERT INTO questions VALUES(?,?,?)", (testid, message.text, num))
-        connection.commit()
+    ques(testid, message.text, 1)
     m = bot.send_message(message.chat.id, 'Успешно! Теперь второй вопрос!')
     bot.register_next_step_handler(m, q2, testid)
 
 
 def q2(message, testid):
-    num = 2
-    with sqlite3.connect('project.db') as connection:
-        cur = connection.cursor()
-        cur.execute("INSERT INTO questions VALUES(?,?,?)", (testid, message.text, num))
-        connection.commit()
+    ques(testid, message.text, 2)
     m = bot.send_message(message.chat.id, 'Успешно! Теперь третий вопрос!')
     bot.register_next_step_handler(m, q3, testid)
 
 
 def q3(message, testid):
-    num = 3
-    with sqlite3.connect('project.db') as connection:
-        cur = connection.cursor()
-        cur.execute("INSERT INTO questions VALUES(?,?,?)", (testid, message.text, num))
-        connection.commit()
-
+    ques(testid, message.text, 3)
     m = bot.send_message(message.chat.id, 'Успешно! Теперь четвёртый вопрос!')
     bot.register_next_step_handler(m, q4, testid)
 
-
-
 def q4(message, testid):
-    num = 4
-    with sqlite3.connect('project.db') as connection:
-        cur = connection.cursor()
-        cur.execute("INSERT INTO questions VALUES(?,?,?)", (testid, message.text, num))
-        connection.commit()
+    ques(testid, message.text, 4)
     m = bot.send_message(message.chat.id, 'Успешно! Теперь пятый вопрос!')
     bot.register_next_step_handler(m, q5, testid)
 
 
 
 def q5(message, testid):
-    num = 5
-    with sqlite3.connect('project.db') as connection:
-        cur = connection.cursor()
-        cur.execute("INSERT INTO questions VALUES(?,?,?)", (testid, message.text, num))
-        connection.commit()
+    ques(testid, message.text, 5)
     bot.send_message(message.chat.id, 'Успешно! Все вопросы добавлены!')
     bot.delete_state(message.from_user.id, message.chat.id)
 
 
 @bot.message_handler(state = MS.questions)
 def questions(message):
-    with sqlite3.connect('project.db') as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT MAX(id) FROM test_name")
-        c = cur.fetchone()
-        cur.execute("INSERT INTO test_name VALUES (?,?,?)", (c[0]+1, f'{message.text}', message.from_user.id))
-        conn.commit()
+    c = adding_questions(message)
     testid = c[0]+1
     bot.send_message(message.chat.id, f'Код вашего теста - {testid}')
     bot.send_message(message.chat.id, 'Далее отправляйте свои вопросы по одному в следующем формате:')
@@ -125,20 +86,11 @@ def questions(message):
 
 @bot.message_handler(state = MS.check_num)
 def check(message):
-    with sqlite3.connect('project.db') as connection:
-        cur = connection.cursor()
-        cur.execute("SELECT id FROM test_name")
-        b = cur.fetchall()
-        connection.commit()
+    b = checking_id()
     for bd in b:
         if int(message.text) in bd:
             testid = int(message.text)
-            with sqlite3.connect('project.db') as connection:
-                cur = connection.cursor()
-                cur.execute("SELECT * FROM test_name WHERE id == (?)", (testid,))
-                c = cur.fetchall()
-                name = c[0][1]
-                connection.commit()
+            name = find_name(testid)
             m = bot.send_message(message.chat.id,
                                  f'Название теста - "{name}", отправьте "+" чтобы пройти или "?" чтобы выйти. ')
             bot.register_next_step_handler(m, prom, testid)
@@ -148,24 +100,9 @@ def check(message):
         bot.send_message(message.chat.id, 'Попробуйте ещё раз!')
 
 
-def checki(message, testid):
-    with sqlite3.connect('project.db') as connection:
-        cur = connection.cursor()
-        cur.execute("SELECT * FROM test_name WHERE id == (?)", (testid,))
-        c = cur.fetchall()
-        name = c[0][1]
-        connection.commit()
-    m = bot.send_message(message.chat.id, f'Название теста - "{name}", отправьте "+" чтобы пройти или "-" чтобы выйти. ')
-    bot.register_next_step_handler(m, prom, testid)
-
-
 def prom(message, testid):
     if message.text == '+':
-        with sqlite3.connect('project.db') as connection:
-            cur = connection.cursor()
-            cur.execute('SELECT question FROM questions WHERE id = (?) and qnum = 1', (testid,))
-            connection.commit()
-            q = cur.fetchall()[0][0]
+        q = getting_question(testid, 1)
         q = q.replace('\n', ' ')
         ques = q[:q.find('варианты:')]
         vars = q[q.find('варианты:') + 10:].split('.')
@@ -183,11 +120,7 @@ def a1(message, testid, cnt, corr):
     if message.text == corr:
         cnt+=1
 
-    with sqlite3.connect('project.db') as connection:
-        cur = connection.cursor()
-        cur.execute('SELECT question FROM questions WHERE id = (?) and qnum = 2', (testid,))
-        connection.commit()
-        q = cur.fetchall()[0][0]
+    q = getting_question(testid, 2)
     q = q.replace('\n', ' ')
     ques = q[:q.find('варианты:')]
     vars = q[q.find('варианты:') + 10:].split('.')
@@ -205,11 +138,7 @@ def a2(message, testid, cnt, corr):
     if message.text == corr:
         cnt += 1
 
-    with sqlite3.connect('project.db') as connection:
-        cur = connection.cursor()
-        cur.execute('SELECT question FROM questions WHERE id = (?) and qnum = 3', (testid,))
-        connection.commit()
-        q = cur.fetchall()[0][0]
+    q = getting_question(testid, 3)
     q = q.replace('\n', ' ')
     ques = q[:q.find('варианты:')]
     vars = q[q.find('варианты:') + 10:].split('.')
@@ -226,11 +155,7 @@ def a3(message, testid, cnt, corr):
     if message.text == corr:
         cnt += 1
 
-    with sqlite3.connect('project.db') as connection:
-        cur = connection.cursor()
-        cur.execute('SELECT question FROM questions WHERE id = (?) and qnum = 4', (testid,))
-        connection.commit()
-        q = cur.fetchall()[0][0]
+    q = getting_question(testid, 4)
     q = q.replace('\n', ' ')
     ques = q[:q.find('варианты:')]
     vars = q[q.find('варианты:') + 10:].split('.')
@@ -246,11 +171,7 @@ def a3(message, testid, cnt, corr):
 def a4(message, testid, cnt, corr):
     if message.text == corr:
         cnt += 1
-    with sqlite3.connect('project.db') as connection:
-        cur = connection.cursor()
-        cur.execute('SELECT question FROM questions WHERE id = (?) and qnum = 5', (testid,))
-        connection.commit()
-        q = cur.fetchall()[0][0]
+    q = getting_question(testid, 5)
     q = q.replace('\n', ' ')
     ques = q[:q.find('варианты:')]
     vars = q[q.find('варианты:') + 10:].split('.')
@@ -268,10 +189,7 @@ def a5(message, testid, cnt, corr):
     if message.text == corr:
         cnt += 1
     bot.send_message(message.chat.id, f"Ваш результат: {cnt} из 5!")
-    with sqlite3.connect('project.db', check_same_thread=False) as conn:
-        curs = conn.cursor()
-        curs.execute("INSERT INTO results VALUES (?,?,?)", (testid, message.from_user.id, cnt))
-        conn.commit()
+    insert_result(testid, message.from_user.id, cnt)
     bot.delete_state(message.from_user.id, message.chat.id)
 
 
