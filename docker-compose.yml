@@ -1,0 +1,14 @@
+version: "3"
+services:
+  bot:
+    build:
+      context: ./Dockerfile/
+    image: bot
+    container_name:
+      test_bot
+    command:
+      python test_bot.py
+    env_file:
+      - .env
+    restart:
+      always

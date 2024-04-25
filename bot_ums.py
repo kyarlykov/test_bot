@@ -1,10 +1,11 @@
 import telebot as tb
 from telebot.handler_backends import State, StatesGroup
-import sqlite3
-from token_bot import token
+import os
+from dotenv import load_dotenv
 from bot_funcs import *
 
-bot = tb.TeleBot(token)
+load_dotenv()
+bot = tb.TeleBot(os.getenv("TOKEN"))
 
 class MS(StatesGroup):
     my_res = State()
