@@ -5,7 +5,7 @@ services:
       context: ./Dockerfile/
     image: bot
     container_name:
-      test_bot
+      projectbot
     command:
       python test_bot.py
     env_file:
