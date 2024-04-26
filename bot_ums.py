@@ -107,6 +107,7 @@ def prom(message, testid):
         q = q.replace('\n', ' ')
         ques = q[:q.find('варианты:')]
         vars = q[q.find('варианты:') + 10:].split('.')
+        vars = list(map(lambda x: x.lstrip(), vars))
         for i in vars:
             if i[-1] == '+':
                 corr = str(i[0])
@@ -125,6 +126,7 @@ def a1(message, testid, cnt, corr):
     q = q.replace('\n', ' ')
     ques = q[:q.find('варианты:')]
     vars = q[q.find('варианты:') + 10:].split('.')
+    vars = list(map(lambda x: x.lstrip(), vars))
     for i in vars:
         if i[-1] == '+':
             corr = str(i[0])
@@ -143,6 +145,7 @@ def a2(message, testid, cnt, corr):
     q = q.replace('\n', ' ')
     ques = q[:q.find('варианты:')]
     vars = q[q.find('варианты:') + 10:].split('.')
+    vars = list(map(lambda x: x.lstrip(), vars))
     for i in vars:
         if i[-1] == '+':
             corr = str(i[0])
@@ -155,11 +158,11 @@ def a2(message, testid, cnt, corr):
 def a3(message, testid, cnt, corr):
     if message.text == corr:
         cnt += 1
-
     q = getting_question(testid, 4)
     q = q.replace('\n', ' ')
     ques = q[:q.find('варианты:')]
     vars = q[q.find('варианты:') + 10:].split('.')
+    vars = list(map(lambda x: x.lstrip(), vars))
     for i in vars:
         if i[-1] == '+':
             corr = str(i[0])
@@ -176,6 +179,7 @@ def a4(message, testid, cnt, corr):
     q = q.replace('\n', ' ')
     ques = q[:q.find('варианты:')]
     vars = q[q.find('варианты:') + 10:].split('.')
+    vars = list(map(lambda x: x.lstrip(), vars))
     for i in vars:
         if i[-1] == '+':
             corr = str(i[0])
