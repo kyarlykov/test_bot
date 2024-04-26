@@ -89,12 +89,17 @@ def questions(message):
 def check(message):
     b = checking_id()
     for bd in b:
-        if int(message.text) in bd:
-            testid = int(message.text)
-            name = find_name(testid)
-            m = bot.send_message(message.chat.id,
-                                 f'Название теста - "{name}", отправьте "+" чтобы пройти или "?" чтобы выйти. ')
-            bot.register_next_step_handler(m, prom, testid)
+        try:
+            if int(message.text) in bd:
+                testid = int(message.text)
+                name = find_name(testid)
+                m = bot.send_message(message.chat.id,
+                                     f'Название теста - "{name}", отправьте "+" чтобы пройти или "?" чтобы выйти. ')
+                bot.register_next_step_handler(m, prom, testid)
+                break
+        except ValueError:
+            bot.delete_state(message.from_user.id, message.chat.id)
+            bot.send_message(message.chat.id, 'Попробуйте ещё раз!')
             break
     else:
         bot.delete_state(message.from_user.id, message.chat.id)
