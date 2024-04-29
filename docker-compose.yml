@@ -4,5 +4,5 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    restart: on_failure
+    restart: unless-stopped
     env_file: .env
