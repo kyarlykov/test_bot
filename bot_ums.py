@@ -110,7 +110,10 @@ def check(message):
 
 
 def prom(message, testid):
-    if message.text == '+':
+    if message.text == '?':
+        bot.delete_state(message.from_user.id, message.chat.id)
+        bot.send_message(message.chat.id, "В другой раз!")
+    elif message.text == '+':
         q = getting_question(testid, 1)
         q = q.replace('\n', ' ')
         ques = q[:q.find('варианты:')]
@@ -120,11 +123,11 @@ def prom(message, testid):
             if i[-1] == '+':
                 corr = str(i[0])
                 vars[vars.index(i)] = i[:-1]
-    var = " ".join(vars)
-    bot.send_message(message.chat.id, f"{ques}")
-    mes = bot.send_message(message.chat.id, f"{var}")
-    cnt = 0
-    bot.register_next_step_handler(mes, a1, testid, cnt, corr)
+        var = " ".join(vars)
+        bot.send_message(message.chat.id, f"{ques}")
+        mes = bot.send_message(message.chat.id, f"{var}")
+        cnt = 0
+        bot.register_next_step_handler(mes, a1, testid, cnt, corr)
 
 def a1(message, testid, cnt, corr):
     if message.text == corr:
