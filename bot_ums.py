@@ -2,7 +2,7 @@ import telebot as tb
 from telebot.handler_backends import State, StatesGroup
 import os
 from dotenv import load_dotenv
-from bot_funcs import *
+from bot_funcs_postgres import *
 
 load_dotenv()
 bot = tb.TeleBot(os.getenv("TOKEN"))
@@ -29,14 +29,17 @@ def res(message):
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
-    with connect('project.db') as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT id FROM test_name WHERE creator_id = (?)", (call.from_user.id, ))
-        tests = cur.fetchall()
-        for i in tests:
-            if call.data == f"{i[0]}":
-                cur.execute("SELECT * FROM results WHERE test_id = (?)", (i[0], ))
-                res = cur.fetchall()
+    conn = c()
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM test_name WHERE creator_id = (%s)", (call.from_user.id, ))
+    tests = cur.fetchall()
+    for i in tests:
+        if call.data == f"{i[0]}":
+            cur.execute("SELECT * FROM results WHERE test_id = (%s)", (i[0], ))
+            res = cur.fetchall()
+    cur.close()
+    conn.commit()
+    conn.close()
     if len(res) == 0:
         bot.send_message(call.message.chat.id, "Ваш тест никто не проходил!")
     else:
@@ -117,7 +120,7 @@ def prom(message, testid):
             if i[-1] == '+':
                 corr = str(i[0])
                 vars[vars.index(i)] = i[:-1]
-    var = "".join(vars)
+    var = " ".join(vars)
     bot.send_message(message.chat.id, f"{ques}")
     mes = bot.send_message(message.chat.id, f"{var}")
     cnt = 0
@@ -136,7 +139,7 @@ def a1(message, testid, cnt, corr):
         if i[-1] == '+':
             corr = str(i[0])
             vars[vars.index(i)] = i[:-1]
-    var = "".join(vars)
+    var = " ".join(vars)
     bot.send_message(message.chat.id, f"{ques}")
     mes = bot.send_message(message.chat.id, f"{var}")
     bot.register_next_step_handler(mes, a2, testid, cnt, corr)
@@ -155,7 +158,7 @@ def a2(message, testid, cnt, corr):
         if i[-1] == '+':
             corr = str(i[0])
             vars[vars.index(i)] = i[:-1]
-    var = "".join(vars)
+    var =  " ".join(vars)
     bot.send_message(message.chat.id, f"{ques}")
     mes = bot.send_message(message.chat.id, f"{var}")
     bot.register_next_step_handler(mes, a3, testid, cnt, corr)
@@ -172,7 +175,7 @@ def a3(message, testid, cnt, corr):
         if i[-1] == '+':
             corr = str(i[0])
             vars[vars.index(i)] = i[:-1]
-    var = "".join(vars)
+    var = " ".join(vars)
     bot.send_message(message.chat.id, f"{ques}")
     mes = bot.send_message(message.chat.id, f"{var}")
     bot.register_next_step_handler(mes, a4, testid, cnt, corr)
@@ -189,7 +192,7 @@ def a4(message, testid, cnt, corr):
         if i[-1] == '+':
             corr = str(i[0])
             vars[vars.index(i)] = i[:-1]
-    var = "".join(vars)
+    var = " ".join(vars)
     bot.send_message(message.chat.id, f"{ques}")
     mes = bot.send_message(message.chat.id, f"{var}")
     bot.register_next_step_handler(mes, a5, testid, cnt, corr)

@@ -1,4 +1,1 @@
-#token
-.env
-#database
-project.db
+/.env
