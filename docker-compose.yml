@@ -22,9 +22,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: bot
-    container_name:
-      test_bot
     env_file:
       - .env
     restart:
