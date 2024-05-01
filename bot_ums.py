@@ -6,6 +6,7 @@ from bot_funcs_postgres import *
 
 load_dotenv()
 bot = tb.TeleBot(os.getenv("TOKEN"))
+creating_tables()
 
 class MS(StatesGroup):
     my_res = State()

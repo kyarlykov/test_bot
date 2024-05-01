@@ -6,10 +6,40 @@ def c():
         dbname = "postgres",
         user = "postgres",
         password = "14Kirill122006",
-        host = "db",
+        host = "localhost",
         port = 5432
     )
     return conn
+
+def creating_tables():
+    conn = c()
+    cur = conn.cursor()
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS "test_name" (
+	"id"	INTEGER NOT NULL UNIQUE,
+	"tname"	TEXT NOT NULL,
+	"creator_id"	INTEGER NOT NULL,
+	PRIMARY KEY("id")
+);
+    """)
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS "results" (
+	"test_id"	INTEGER NOT NULL,
+	"user_id"	INTEGER NOT NULL,
+	"result"	INTEGER NOT NULL
+);
+    """)
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS "questions" (
+	"id"	integer,
+	"question"	text,
+	"qnum"	integer,
+	FOREIGN KEY("id") REFERENCES "test_name"("id")
+);
+    """)
+    cur.close()
+    conn.commit()
+    conn.close()
 
 def private_res(user_id):
     con = c()
