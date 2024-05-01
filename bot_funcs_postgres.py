@@ -22,7 +22,6 @@ def creating_tables():
 	PRIMARY KEY("id")
 );
     """)
-    cur.execute("INSERT INTO test_name VALUES (%s, %s, %s);", (0, 'TEST', 0))
     cur.execute("""
     CREATE TABLE IF NOT EXISTS "results" (
 	"test_id"	INTEGER NOT NULL,
