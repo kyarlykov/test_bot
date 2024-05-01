@@ -6,7 +6,7 @@ def c():
         dbname = "postgres",
         user = "postgres",
         password = "14Kirill122006",
-        host = "localhost",
+        host = "db",
         port = 5432
     )
     return conn
